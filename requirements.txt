@@ -5,7 +5,7 @@ numpy
 matplotlib
 mplfinance
 scikit-learn
-tensorflow
+tensorflow-cpu
 streamlit-autorefresh
 python-dotenv
 requests
