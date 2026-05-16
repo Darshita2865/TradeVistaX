@@ -1,0 +1,11 @@
+streamlit
+yfinance
+pandas
+numpy
+matplotlib
+mplfinance
+scikit-learn
+tensorflow
+streamlit-autorefresh
+python-dotenv
+requests
