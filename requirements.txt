@@ -1,11 +1,9 @@
 streamlit
-yfinance
 pandas
 numpy
+yfinance
 matplotlib
 mplfinance
 scikit-learn
-tensorflow-cpu
-streamlit-autorefresh
-python-dotenv
+plotly
 requests
