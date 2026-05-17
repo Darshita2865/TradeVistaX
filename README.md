@@ -52,8 +52,9 @@ cd TradeVistaX
 Install dependencies
 Bash
 pip install -r requirements.txt
-(Packages include: streamlit, yfinance, pandas, numpy, matplotlib, mplfinance, scikit-learn, requests) �
-GitHub
+(Packages include: streamlit, yfinance, pandas, numpy, matplotlib, mplfinance, scikit-learn, requests)
+
+� GitHub
 Create .env file (optional)
 
 TELEGRAM_TOKEN=YOUR_TOKEN
@@ -83,10 +84,9 @@ TradeVistaX/
 ├── appdata.py.py            # Data utilities
 ├── alerts.json              # Stored price alerts
 ├── history.json             # Triggered alerts log
-├── requirements.txt         # Dependencies
+├── requirements.txt        # Dependencies
 ├── .gitignore
-(Filenames reflect what’s visible in the repo) �
-GitHub
+(Filenames reflect what’s visible in the repo) � GitHub
 
 📊 Usage Notes
 Predictions and historical analytics are informational only. Use at your own risk.
