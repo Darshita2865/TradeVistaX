@@ -5,32 +5,26 @@ TradeVistaX is a real-time financial analytics dashboard built with Streamlit th
 🚀 Features
 
 📊 Live Market Summary
-Displays real-time prices and changes for NIFTY and SENSEX indices. �
-GitHub
+Displays real-time prices and changes for NIFTY and SENSEX indices. 
+
 
 📈 Interactive Candlestick Charts
-Visualize stock price movement using different intervals and periods. �
-GitHub
+Visualize stock price movement using different intervals and periods. 
 
 🧠 Prediction Module
-LSTM-based price forecasting for selected stocks. �
-GitHub
+LSTM-based price forecasting for selected stocks.
 
 📰 Top Financial News
-Shows recent headlines using a news API (if API key provided). �
-GitHub
+Shows recent headlines using a news API (if API key provided). 
 
 📉 Historical Stock Analysis
-Summary statistics, moving averages, and visualizations. �
-GitHub
+Summary statistics, moving averages, and visualizations.
 
 ⏱️ Alerts System
-Users can register and set price alerts stored in JSON. �
-GitHub
+Users can register and set price alerts stored in JSON.
 
 🔐 Authentication UI
-Basic sign-in and sign-up system simulated in the interface. �
-GitHub
+Basic sign-in and sign-up system simulated in the interface. 
 
 🛠️ Tech Stack
 The dashboard uses popular Python libraries for data fetching, visualization, and ML:
@@ -40,8 +34,7 @@ pandas, numpy – Data handling
 matplotlib, mplfinance – Plotting
 scikit-learn & TensorFlow – Prediction modeling
 requests – External API calls
-dotenv – Environment variable support �
-GitHub
+dotenv – Environment variable support 
 
 📦 Installation
 Clone the repo
@@ -54,7 +47,6 @@ Bash
 pip install -r requirements.txt
 (Packages include: streamlit, yfinance, pandas, numpy, matplotlib, mplfinance, scikit-learn, requests)
 
-� GitHub
 Create .env file (optional)
 
 TELEGRAM_TOKEN=YOUR_TOKEN
@@ -86,7 +78,7 @@ TradeVistaX/
 ├── history.json             # Triggered alerts log
 ├── requirements.txt        # Dependencies
 ├── .gitignore
-(Filenames reflect what’s visible in the repo) � GitHub
+(Filenames reflect what’s visible in the repo) 
 
 📊 Usage Notes
 Predictions and historical analytics are informational only. Use at your own risk.
@@ -94,4 +86,4 @@ Data frequency and accuracy depend on external APIs.
 The alert system stores local JSON files and does not use a real database.
 
 📄 License
-This repository currently does not show a license file on GitHub — if you intend to open-source or share, consider adding one (e.g., MIT LICENSE). �
+This repository currently does not show a license file on GitHub — if you intend to open-source or share, consider adding one (e.g., MIT LICENSE).
