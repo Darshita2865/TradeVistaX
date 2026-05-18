@@ -69,14 +69,23 @@ GitHub
 🗂️ Project Structure
 
 TradeVistaX/
-├── assets/                  # UI graphics & background
-├── app.py                   # Main Streamlit application
-├── monitor.py.py            # (possibly monitoring utilities)
-├── config.toml.toml         # App configuration
-├── appdata.py.py            # Data utilities
-├── alerts.json              # Stored price alerts
-├── history.json             # Triggered alerts log
-├── requirements.txt        # Dependencies
+
+├── assets/                    # UI graphics & background
+
+├── app.py                     # Main Streamlit application
+
+├── monitor.py.py              # (possibly monitoring utilities)
+
+├── config.toml.toml           # App configuration
+
+├── appdata.py.py              # Data utilities
+
+├── alerts.json                # Stored price alerts
+
+├── history.json               # Triggered alerts log
+
+├── requirements.txt           # Dependencies
+
 ├── .gitignore
 (Filenames reflect what’s visible in the repo) 
 
