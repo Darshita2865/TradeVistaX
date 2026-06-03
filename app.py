@@ -1,4 +1,3 @@
-# app.py - Complete Stock Market Analysis Application
 
 import streamlit as st
 import base64
@@ -18,21 +17,18 @@ import tensorflow as tf
 from streamlit_autorefresh import st_autorefresh
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# ==================== CONFIGURATION ====================
-# Get API keys from environment variables
+# ==================== CONFIGURATION ====================//
+
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 
-# Check if API keys are loaded (optional warning)
 if not TELEGRAM_TOKEN:
     st.warning("⚠️ TELEGRAM_TOKEN not found in .env file. Alert features will not work.")
 if not FINNHUB_API_KEY:
     st.warning("⚠️ FINNHUB_API_KEY not found in .env file. News features may not work.")
 
-# File paths for alerts
 ALERTS_FILE = "alerts.json"
 HISTORY_FILE = "history.json"
 
