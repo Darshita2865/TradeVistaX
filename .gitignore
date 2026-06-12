@@ -1,39 +1,196 @@
-# Environment variables
+# ====================
+# Python & Virtual Environment
+# ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
 .env
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
 
-# JSON runtime data
+# ====================
+# Runtime & Data Files 
+# ====================
 alerts.json
 history.json
+users.json
+*.db
+*.sqlite
+*.sqlite3
+profile_images/
+uploads/
+temp/
+*.log
+*.pid
 
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
+# ====================
+# Environment & Secrets
+# ====================
+.env
+.env.local
+.env.*.local
+.secrets
+secrets.toml
+.streamlit/secrets.toml
+*.pem
+*.key
+*.crt
 
-# Build files
-build/
-dist/
-*.egg-info/
-*.egg
-
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
-
-# IDE settings
+# ====================
+# IDE & Editor Files
+# ====================
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Streamlit secrets
-.streamlit/secrets.toml
-
-# OS files
+*~
+.~*
 .DS_Store
+Desktop.ini
+*.sublime-*
+.project
+.pydevproject
+.settings/
+
+# ====================
+# Jupyter Notebook
+# ====================
+.ipynb_checkpoints/
+*.ipynb
+*.ipynb_checkpoints
+
+# ====================
+# Testing & Coverage
+# ====================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+
+# ====================
+# Build & Distribution
+# ====================
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+MANIFEST
+.eggs/
+develop-eggs/
+parts/
+sdist/
+var/
+wheels/
+
+# ====================
+# Docker & Deployment
+# ====================
+.docker/
+docker-compose.override.yml
+*.tar.gz
+*.tar
+
+# ====================
+# Logs & Cache
+# ====================
+*.log
+logs/
+*.cache
+.cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# ====================
+# API Keys & Configs (Security)
+# ====================
+config.ini
+config.yaml
+credentials.json
+service-account.json
+*.secret
+*.secrets
+
+# ====================
+# System Files
+# ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+*.tmp
+*.bak
+
+# ====================
+# Streamlit Specific
+# ====================
+.streamlit/config.toml
+.streamlit/credentials.toml
+
+# ====================
+# Backup Files
+# ====================
+*.backup
+*.old
+*.orig
+
+# ====================
+# OS Specific
+# ====================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+*.directory
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# ====================
+# Data Analysis 
+# ====================
+*.csv
+*.xlsx
+*.xls
+*.parquet
+data/raw/
+data/processed/
+
+# ====================
+# Model Files 
+# ====================
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+models/
+*.joblib
+
+# ====================
+# Temporary files
+# ====================
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
