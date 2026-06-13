@@ -2,7 +2,9 @@
 
 TradeVistaX is a real-time financial analytics dashboard built using Streamlit that provides interactive stock market insights, live index tracking, candlestick charting, stock analysis, machine-learning-based predictions, alerts, and financial news — all within a modern web interface.
 
----
+### LIVE DEMO LINK:
+https://tradevistax-hgikrwdxaln4z4mtmwdphr.streamlit.app/
+
 
 # 🚀 Features
 
