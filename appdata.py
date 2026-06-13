@@ -183,7 +183,7 @@ if "selected_stock" not in st.session_state:
 if "current_captcha" not in st.session_state:
     st.session_state.current_captcha = generate_captcha()
 
-# ==================== CLEAN PROFESSIONAL AI ANIMATION ====================
+# ====================  AI ANIMATION ====================
 
 st.markdown("""
 <style>
@@ -546,7 +546,7 @@ div[data-testid="column"]:nth-child(4) {
 
 <div class="ticker-tape">
     <div class="ticker-content">
-        <span class="ticker-item">📈 NIFTY 50 ▲ 1.2%</span>
+        <span class="ticker-item">📈 NIFTY ▲ 1.2%</span>
         <span class="ticker-item">📊 SENSEX ▲ 0.8%</span>
         <span class="ticker-item">🏦 BANK NIFTY ▼ 0.3%</span>
         <span class="ticker-item">💎 RELIANCE ▲ 2.1%</span>
@@ -580,8 +580,6 @@ createParticles();
 """, unsafe_allow_html=True)
 
 # ==================== NAVIGATION BUTTONS ====================
-
-# Create a container for the navbar buttons with adjusted column ratios for better spacing
 nav_col1, nav_col2, nav_col3, nav_col4, nav_col5, nav_col6 = st.columns([1, 1, 1, 1.2, 3.8, 1])
 
 with nav_col1:
@@ -782,7 +780,7 @@ if st.session_state.page == "home":
         st.info("💡 Tip: Try using symbols like: RELIANCE.NS, TCS.NS, INFY.NS, AAPL, MSFT, GOOGL")
     
 
-    # Stock Analysis - FIXED INDENTATION
+    # Stock Analysis
     st.subheader("🏠 Stock Analysis")
     stocks = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "AAPL", "MSFT", "GOOGL"]
     selected_stock = st.selectbox("🔎 Select Stock Symbol", stocks)
@@ -891,7 +889,7 @@ if st.session_state.page == "home":
                         y_train, y_test = y[:train_size], y[train_size:]
                         
                         # Build and train LSTM Model
-                        with st.spinner("🧠 Training LSTM Neural Network... Please wait..."):
+                        with st.spinner("🧠MODEL IS WORKING... Please wait..."):
                             model = tf.keras.Sequential([
                                 tf.keras.layers.LSTM(50, return_sequences=True, input_shape=(time_step, 1)),
                                 tf.keras.layers.Dropout(0.2),
