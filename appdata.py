@@ -183,7 +183,7 @@ if "selected_stock" not in st.session_state:
 if "current_captcha" not in st.session_state:
     st.session_state.current_captcha = generate_captcha()
 
-# ==================== AI ANIMATION ====================
+# ==================== CLEAN PROFESSIONAL AI ANIMATION ====================
 
 st.markdown("""
 <style>
@@ -380,52 +380,50 @@ footer {visibility: hidden;}
     animation: blink 1s infinite;
     vertical-align: middle;
 }
-.nav-buttons-container {
-    position: fixed;
-    top: 36px;
-    left: 0;
-    right: 0;
-    background: rgba(10, 15, 25, 0.98);
-    padding: 8px 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 9999;
-    border-bottom: 1px solid rgba(0, 191, 166, 0.2);
-}
-.nav-buttons-left {
-    display: flex;
-    gap: 15px;
-}
-.nav-buttons-right {
-    display: flex;
-    align-items: center;
-}
-.stButton > button {
+/* FIXED BUTTON STYLES - TEXT PROPERLY CENTERED AND NO WRAPPING */
+div[data-testid="column"] .stButton > button {
     background: transparent !important;
     border: 1px solid rgba(0, 191, 166, 0.3) !important;
     color: #ccddff !important;
     font-size: 14px !important;
     font-weight: 500 !important;
-    padding: 6px 24px !important;
+    padding: 8px 12px !important;
     border-radius: 25px !important;
     transition: all 0.2s ease !important;
     cursor: pointer !important;
     white-space: nowrap !important;
-    height: 36px !important;
+    height: auto !important;
+    min-height: 40px !important;
+    line-height: normal !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    text-align: center !important;
+    overflow: visible !important;
+    word-break: keep-all !important;
 }
-.stButton > button:hover {
+div[data-testid="column"] .stButton > button:hover {
     background: rgba(0, 191, 166, 0.1) !important;
     border-color: #00bfa6 !important;
     color: #00bfa6 !important;
 }
-.get-started-btn > button {
+/* Special styling for Get Started button - ensure text stays together */
+div[data-testid="column"]:nth-child(4) .stButton > button {
     background: linear-gradient(135deg, #00bfa6, #008c7a) !important;
     border: none !important;
     color: white !important;
+    white-space: nowrap !important;
+    min-width: 120px !important;
+    padding: 8px 16px !important;
 }
-.get-started-btn > button:hover {
+div[data-testid="column"]:nth-child(4) .stButton > button:hover {
     background: linear-gradient(135deg, #00d4b8, #00bfa6) !important;
+}
+/* Make sure the fourth column has enough width */
+div[data-testid="column"]:nth-child(4) {
+    min-width: 120px !important;
 }
 .profile-icon {
     width: 36px;
@@ -458,6 +456,7 @@ footer {visibility: hidden;}
     border-radius: 0 !important;
     background: transparent !important;
     border: none !important;
+    justify-content: flex-start !important;
 }
 .market-dropdown .stButton > button:hover {
     background: rgba(0, 191, 166, 0.1) !important;
@@ -582,31 +581,32 @@ createParticles();
 
 # ==================== NAVIGATION BUTTONS ====================
 
-col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 4, 1])
+# Create a container for the navbar buttons with adjusted column ratios for better spacing
+nav_col1, nav_col2, nav_col3, nav_col4, nav_col5, nav_col6 = st.columns([1, 1, 1, 1.2, 3.8, 1])
 
-with col1:
-    if st.button("🏠 Home", use_container_width=True):
+with nav_col1:
+    if st.button("🏠 Home", key="nav_home", use_container_width=True):
         set_page("home")
         st.rerun()
 
-with col2:
-    if st.button("📊 Markets", use_container_width=True):
+with nav_col2:
+    if st.button("📊 Markets", key="nav_markets", use_container_width=True):
         st.session_state.show_market_dropdown = not st.session_state.show_market_dropdown
         st.rerun()
 
-with col3:
-    if st.button("🔐 Sign In", use_container_width=True):
+with nav_col3:
+    if st.button("🔐 Sign In", key="nav_signin", use_container_width=True):
         set_page("signin")
         st.rerun()
 
-with col4:
-    if st.button("🚀 Get Started", use_container_width=True):
+with nav_col4:
+    if st.button("🚀 Get Started", key="nav_getstarted", use_container_width=True):
         set_page("signup")
         st.rerun()
 
-with col6:
+with nav_col6:
     profile_label = st.session_state.username[0].upper() if st.session_state.logged_in and st.session_state.username else "👤"
-    if st.button(profile_label, use_container_width=True):
+    if st.button(profile_label, key="nav_profile", use_container_width=True):
         set_page("profile")
         st.rerun()
 
@@ -615,11 +615,11 @@ if st.session_state.show_market_dropdown:
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
         st.markdown("### 📊 Select Market")
-        if st.button("🇮🇳 Indian Markets", use_container_width=True):
+        if st.button("🇮🇳 Indian Markets", key="market_indian", use_container_width=True):
             st.session_state.show_market_dropdown = False
             set_page("indian")
             st.rerun()
-        if st.button("🌍 Global Markets", use_container_width=True):
+        if st.button("🌍 Global Markets", key="market_global", use_container_width=True):
             st.session_state.show_market_dropdown = False
             set_page("global")
             st.rerun()
@@ -713,29 +713,25 @@ if st.session_state.page == "home":
     else:
         st.info("No news available at the moment.")
     
-    # Candlestick charts - SIMPLIFIED FIXED VERSION
+    # Candlestick charts
     st.title("📊 Live Candlestick Chart")
     
     symbol = st.text_input("Enter Stock Symbol (e.g. RELIANCE.NS or AAPL):", st.session_state.selected_stock).upper().strip()
     
-    # Use simpler intervals that always work
     period = st.selectbox("Select Period:", ["1mo", "3mo", "6mo", "1y", "2y"], index=1)
     
     refresh_sec = st.slider("Auto-refresh every (seconds):", 30, 300, 60)
     st_autorefresh(interval=refresh_sec * 1000, limit=None, key="auto_refresh")
     
     try:
-        # Download daily data - simplest format
         df = yf.download(symbol, period=period, interval="1d", progress=False)
         
         if df.empty:
             st.warning(f"⚠️ No data available for {symbol}")
         else:
-            # Clean and prepare data
             df = df[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
             df.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
             
-            # Convert to numeric and drop NaN
             for col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
             df = df.dropna()
@@ -746,10 +742,8 @@ if st.session_state.page == "home":
                 st.success(f"✅ Showing {symbol} | Period: {period}")
                 st.caption(f"Last updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Data points: {len(df)}")
                 
-                # Simple candlestick using matplotlib
                 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={'height_ratios': [3, 1]})
                 
-                # Plot candlesticks manually
                 width = 0.6
                 for i in range(len(df)):
                     open_p = df['Open'].iloc[i]
@@ -760,20 +754,16 @@ if st.session_state.page == "home":
                     
                     color = '#00ff88' if close_p >= open_p else '#ff4444'
                     
-                    # Draw body
                     ax1.bar(date, close_p - open_p, bottom=min(open_p, close_p), 
                            width=width, color=color, alpha=0.8, zorder=2)
-                    # Draw wick
                     ax1.plot([date, date], [low, high], color=color, linewidth=1, zorder=1)
                 
-                # Format candlestick chart
                 ax1.set_title(f'{symbol} - Candlestick Chart', fontsize=14, fontweight='bold', color='white')
                 ax1.set_ylabel('Price (₹)', color='white')
                 ax1.tick_params(colors='white')
                 ax1.grid(True, alpha=0.2)
                 ax1.set_facecolor('#0a0e17')
                 
-                # Plot volume
                 colors = ['#00ff88' if df['Close'].iloc[i] >= df['Open'].iloc[i] else '#ff4444' for i in range(len(df))]
                 ax2.bar(df.index, df['Volume'], color=colors, alpha=0.5)
                 ax2.set_ylabel('Volume', color='white')
@@ -791,6 +781,7 @@ if st.session_state.page == "home":
         st.error(f"Error: {str(e)}")
         st.info("💡 Tip: Try using symbols like: RELIANCE.NS, TCS.NS, INFY.NS, AAPL, MSFT, GOOGL")
     
+
     # Stock Analysis - FIXED INDENTATION
     st.subheader("🏠 Stock Analysis")
     stocks = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "AAPL", "MSFT", "GOOGL"]
@@ -930,7 +921,7 @@ if st.session_state.page == "home":
                         next_pred = model.predict(last_60_days, verbose=0)
                         next_price = scaler.inverse_transform(next_pred)[0, 0]
                         
-                        # Display results 
+                        # Display results in a clean format (like your second screenshot)
                         st.markdown(f"""
                         <div style="background: linear-gradient(135deg, #0a0e17 0%, #0d1117 100%); 
                                     border-radius: 15px; 
@@ -964,7 +955,7 @@ if st.session_state.page == "home":
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        #  buy/sell signal
+                        # Simple buy/sell signal
                         st.markdown("---")
                         if next_price > latest_price:
                             st.success(f"📈 **AI Prediction:** Price expected to go UP by {((next_price - latest_price) / latest_price * 100):.2f}%")
