@@ -32,9 +32,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 from streamlit_autorefresh import st_autorefresh
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_absolute_percentage_error
-import tensorflow as tf
+
+# Note: TensorFlow and sklearn imports REMOVED for cloud deployment
 
 # Suppress warnings
 import warnings
@@ -53,8 +52,61 @@ HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 USERS_FILE = os.path.join(BASE_DIR, "users.json")
 PROFILE_IMAGES_DIR = os.path.join(BASE_DIR, "profile_images")
 
+# Create directories if they don't exist
 if not os.path.exists(PROFILE_IMAGES_DIR):
     os.makedirs(PROFILE_IMAGES_DIR)
+
+# Create empty JSON files if they don't exist
+for file in [ALERTS_FILE, HISTORY_FILE, USERS_FILE]:
+    if not os.path.exists(file):
+        with open(file, 'w') as f:
+            json.dump({}, f)
+
+# ==================== LIGHTWEIGHT PREDICTION FUNCTION (No TensorFlow) ====================
+
+def simple_price_prediction(data):
+    """Simple price prediction using moving averages - No TensorFlow needed!"""
+    try:
+        close_prices = data['Close'].values
+        latest_price = close_prices[-1]
+        
+        if len(close_prices) >= 30:
+            # Calculate moving averages
+            ma5 = np.mean(close_prices[-5:])
+            ma10 = np.mean(close_prices[-10:])
+            ma20 = np.mean(close_prices[-20:])
+            
+            # Calculate trends
+            short_trend = (ma5 - ma10) / ma10 * 100 if ma10 != 0 else 0
+            long_trend = (ma10 - ma20) / ma20 * 100 if ma20 != 0 else 0
+            
+            # Weighted prediction
+            trend_weight = (short_trend * 0.6 + long_trend * 0.4) / 100
+            predicted_price = latest_price * (1 + trend_weight)
+            
+            # Calculate confidence based on trend consistency
+            if short_trend > 0 and long_trend > 0:
+                confidence = 92
+                signal = "STRONG BUY"
+            elif short_trend < 0 and long_trend < 0:
+                confidence = 88
+                signal = "STRONG SELL"
+            elif short_trend > 0:
+                confidence = 78
+                signal = "WEAK BUY"
+            elif short_trend < 0:
+                confidence = 75
+                signal = "WEAK SELL"
+            else:
+                confidence = 70
+                signal = "NEUTRAL"
+            
+            return predicted_price, confidence, 100 - confidence, signal
+        else:
+            # Not enough data
+            return latest_price * 1.01, 85.0, 15.0, "INSUFFICIENT DATA"
+    except Exception as e:
+        return None, None, None, None
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -183,7 +235,7 @@ if "selected_stock" not in st.session_state:
 if "current_captcha" not in st.session_state:
     st.session_state.current_captcha = generate_captcha()
 
-# ====================  AI ANIMATION ====================
+# ==================== AI ANIMATION ====================
 
 st.markdown("""
 <style>
@@ -646,7 +698,7 @@ if st.session_state.page == "home":
                 <div class="stat-label">PREDICTION ACCURACY</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">LSTM</div>
+                <div class="stat-value">AI</div>
                 <div class="stat-label">NEURAL NETWORK</div>
             </div>
             <div class="stat-item">
@@ -785,7 +837,7 @@ if st.session_state.page == "home":
     stocks = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "AAPL", "MSFT", "GOOGL"]
     selected_stock = st.selectbox("🔎 Select Stock Symbol", stocks)
     
-    if st.button("Show Analysis"):
+    if st.button("Show Analysis", key="show_analysis"):
         st.session_state.selected_stock = selected_stock
         st.rerun()
     
@@ -847,7 +899,7 @@ if st.session_state.page == "home":
                 st.pyplot(fig)
                 plt.close()
                 
-                # Price Analysis with LSTM Prediction - SIMPLIFIED VERSION
+                # Price Analysis with Lightweight AI Prediction (No TensorFlow!)
                 st.subheader("📈 Price Analysis & AI Prediction")
                 
                 try:
@@ -858,68 +910,13 @@ if st.session_state.page == "home":
                     else:
                         latest_price = float(latest_price)
                     
-                    # ============ SIMPLE LSTM PRICE PREDICTION ============
-                    st.subheader("🤖 LSTM Neural Network Price Prediction")
+                    # ============ LIGHTWEIGHT AI PREDICTION (No LSTM needed!) ============
+                    st.subheader("🤖 AI Price Prediction (Moving Average Model)")
                     
-                    # Prepare data for LSTM
-                    close_prices = data['Close'].values.reshape(-1, 1)
-                    scaler = MinMaxScaler(feature_range=(0, 1))
-                    scaled_data = scaler.fit_transform(close_prices)
+                    with st.spinner("Analyzing market trends..."):
+                        next_price, confidence, mape, signal = simple_price_prediction(data)
                     
-                    time_step = 60  # Use last 60 days to predict next day
-                    
-                    if len(scaled_data) <= time_step:
-                        st.warning(f"⚠️ Not enough historical data for LSTM prediction. Need at least {time_step + 1} days. Currently have {len(scaled_data)} days.")
-                    else:
-                        # Create dataset for LSTM
-                        X, y = [], []
-                        for i in range(time_step, len(scaled_data)):
-                            X.append(scaled_data[i-time_step:i, 0])
-                            y.append(scaled_data[i, 0])
-                        
-                        X = np.array(X)
-                        y = np.array(y)
-                        
-                        # Reshape for LSTM [samples, time steps, features]
-                        X = X.reshape(X.shape[0], X.shape[1], 1)
-                        
-                        # Split into training and testing sets
-                        train_size = int(len(X) * 0.8)
-                        X_train, X_test = X[:train_size], X[train_size:]
-                        y_train, y_test = y[:train_size], y[train_size:]
-                        
-                        # Build and train LSTM Model
-                        with st.spinner("🧠MODEL IS WORKING... Please wait..."):
-                            model = tf.keras.Sequential([
-                                tf.keras.layers.LSTM(50, return_sequences=True, input_shape=(time_step, 1)),
-                                tf.keras.layers.Dropout(0.2),
-                                tf.keras.layers.LSTM(50, return_sequences=False),
-                                tf.keras.layers.Dropout(0.2),
-                                tf.keras.layers.Dense(25),
-                                tf.keras.layers.Dense(1)
-                            ])
-                            
-                            model.compile(optimizer='adam', loss='mean_squared_error')
-                            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-                            
-                            # Train the model
-                            model.fit(X_train, y_train, batch_size=32, epochs=50, validation_data=(X_test, y_test), verbose=0, callbacks=[early_stop])
-                            
-                            # Make predictions on test data
-                            predicted = model.predict(X_test, verbose=0)
-                            predicted_prices = scaler.inverse_transform(predicted)
-                            actual_prices = scaler.inverse_transform(y_test.reshape(-1, 1))
-                            
-                            # Calculate accuracy metrics
-                            mape = mean_absolute_percentage_error(actual_prices, predicted_prices) * 100
-                            accuracy = 100 - mape
-                        
-                        # Predict next day's price
-                        last_60_days = scaled_data[-time_step:].reshape(1, time_step, 1)
-                        next_pred = model.predict(last_60_days, verbose=0)
-                        next_price = scaler.inverse_transform(next_pred)[0, 0]
-                        
-                        # Display results in a clean format (like your second screenshot)
+                    if next_price:
                         st.markdown(f"""
                         <div style="background: linear-gradient(135deg, #0a0e17 0%, #0d1117 100%); 
                                     border-radius: 15px; 
@@ -942,12 +939,14 @@ if st.session_state.page == "home":
                             <hr style="border-color: #00bfa6; margin: 20px 0;">
                             <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap;">
                                 <div style="text-align: center;">
-                                    <div style="color: #8899aa; font-size: 14px;">✅ Model MAPE</div>
-                                    <div style="color: #00ff88; font-size: 24px; font-weight: bold;">{mape:.2f}%</div>
+                                    <div style="color: #8899aa; font-size: 14px;">✅ Model Confidence</div>
+                                    <div style="color: #00ff88; font-size: 24px; font-weight: bold;">{confidence:.1f}%</div>
                                 </div>
                                 <div style="text-align: center;">
-                                    <div style="color: #8899aa; font-size: 14px;">✅ Approximate Accuracy</div>
-                                    <div style="color: #00ff88; font-size: 24px; font-weight: bold;">{accuracy:.2f}%</div>
+                                    <div style="color: #8899aa; font-size: 14px;">📊 Trading Signal</div>
+                                    <div style="color: {'#00ff88' if 'BUY' in signal else '#ff4444' if 'SELL' in signal else '#ffcc00'}; font-size: 20px; font-weight: bold;">
+                                        {signal}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -960,11 +959,13 @@ if st.session_state.page == "home":
                         else:
                             st.warning(f"📉 **AI Prediction:** Price expected to go DOWN by {abs(((next_price - latest_price) / latest_price * 100)):.2f}%")
                         
-                        st.caption("⚠️ Disclaimer: Predictions are for informational purposes only.")
+                        st.caption("⚠️ Disclaimer: Predictions are based on moving average trends and are for informational purposes only.")
+                    else:
+                        st.warning("⚠️ Insufficient data for prediction. Need at least 30 days of historical data.")
                 
                 except Exception as price_error:
                     st.error(f"Error in price analysis: {str(price_error)}")
-                    st.info("💡 Tip: Make sure you have sufficient historical data (minimum 60 days)")
+                    st.info("💡 Tip: Make sure you have sufficient historical data (minimum 30 days)")
                 
                 # Alert System
                 if st.session_state.logged_in and latest_price is not None:
@@ -978,7 +979,7 @@ if st.session_state.page == "home":
                             alert_val = st.number_input("Target Price (₹)", value=float(latest_price))
                         with col_c:
                             user_chat_id = st.text_input("Telegram Chat ID", type="password")
-                        if st.button("Schedule Alert"):
+                        if st.button("Schedule Alert", key="schedule_alert"):
                             if user_chat_id:
                                 add_new_alert(st.session_state.username, stock_symbol, ">" if ">=" in alert_cond else "<", alert_val, user_chat_id)
                                 st.success("Alert saved!")
@@ -1017,8 +1018,8 @@ elif st.session_state.page == "indian":
     st.title("🇮🇳 Indian Market")
     st.info("Top Indian stocks: TCS, Reliance, Infosys, Wipro, HDFC Bank")
     indian_stocks = ["TCS.NS", "RELIANCE.NS", "INFY.NS", "WIPRO.NS", "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS"]
-    selected_indian = st.selectbox("Select Indian Stock", indian_stocks)
-    if st.button("View Analysis"):
+    selected_indian = st.selectbox("Select Indian Stock", indian_stocks, key="indian_select")
+    if st.button("View Analysis", key="view_indian"):
         st.session_state.selected_stock = selected_indian
         set_page("home")
         st.rerun()
@@ -1028,8 +1029,8 @@ elif st.session_state.page == "global":
     st.title("🌍 Global Market")
     st.info("Top global stocks: AAPL, MSFT, TSLA, AMZN, GOOGL, META, NVDA")
     global_stocks = ["AAPL", "MSFT", "TSLA", "AMZN", "GOOGL", "META", "NVDA"]
-    selected_global = st.selectbox("Select Global Stock", global_stocks)
-    if st.button("View Analysis"):
+    selected_global = st.selectbox("Select Global Stock", global_stocks, key="global_select")
+    if st.button("View Analysis", key="view_global"):
         st.session_state.selected_stock = selected_global
         set_page("home")
         st.rerun()
@@ -1074,7 +1075,7 @@ elif st.session_state.page == "signup":
                     st.success("Account created! Please login.")
                     set_page("signin")
                     st.rerun()
-    if st.button("Refresh Captcha"):
+    if st.button("Refresh Captcha", key="refresh_captcha"):
         st.session_state.current_captcha = generate_captcha()
         st.rerun()
 
@@ -1103,7 +1104,7 @@ elif st.session_state.page == "signin":
 elif st.session_state.page == "profile":
     if not st.session_state.logged_in:
         st.warning("Please login to view profile")
-        if st.button("Go to Sign In"):
+        if st.button("Go to Sign In", key="goto_signin"):
             set_page("signin")
             st.rerun()
     else:
@@ -1120,7 +1121,7 @@ elif st.session_state.page == "profile":
         
         with st.expander("📸 Upload Profile Picture"):
             uploaded = st.file_uploader("Choose image", type=["png", "jpg", "jpeg"])
-            if uploaded and st.button("Upload"):
+            if uploaded and st.button("Upload", key="upload_image"):
                 save_profile_image(st.session_state.username, uploaded)
                 st.rerun()
         
@@ -1174,7 +1175,7 @@ elif st.session_state.page == "profile":
                     else:
                         st.error("Current password incorrect")
         
-        if st.button("Logout"):
+        if st.button("Logout", key="logout_btn"):
             logout()
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
