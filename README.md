@@ -3,8 +3,7 @@
 TradeVistaX is a real-time financial analytics dashboard built using Streamlit that provides interactive stock market insights, live index tracking, candlestick charting, stock analysis, AI-based predictions using moving averages, alerts, and financial news — all within a modern web interface.
 
 ### LIVE DEMO LINK:
-🔗 **[https://tradevistax-hgikrwdxaln4z4mtmwdphr.streamlit.app/](https://tradevistax-hgikrwdxaln4z4mtmwdphr.streamlit.app/)**
-
+https://huggingface.co/spaces/Darshee245/TradeVistaX-Live
 ---
 
 # 🚀 Features
@@ -114,9 +113,8 @@ TradeVistaX is a real-time financial analytics dashboard built using Streamlit t
 
 ```bash
 TradeVistaX/
-│
-├── app.py                     # Main Streamlit application
-├── appdata.py                 # Utility/data functions
+│                    
+├── appdata.py                 # Main application
 ├── monitor.py                 # Monitoring utilities
 ├── config.toml                # Streamlit configuration
 │
