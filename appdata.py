@@ -64,14 +64,18 @@ for file in [ALERTS_FILE, HISTORY_FILE, USERS_FILE]:
 def simple_price_prediction(data):
     """Simple price prediction using moving averages"""
     try:
-        close_prices = data['Close'].values
-        latest_price = close_prices[-1]
+        # Ensure we're working with simple float values
+        close_prices = data['Close'].values.flatten()
+        
+        # Convert to float and ensure no numpy arrays
+        close_prices = [float(x) for x in close_prices]
+        latest_price = float(close_prices[-1])
         
         if len(close_prices) >= 30:
-            # Calculate moving averages
-            ma5 = np.mean(close_prices[-5:])
-            ma10 = np.mean(close_prices[-10:])
-            ma20 = np.mean(close_prices[-20:])
+            # Calculate moving averages as simple floats
+            ma5 = float(np.mean(close_prices[-5:]))
+            ma10 = float(np.mean(close_prices[-10:]))
+            ma20 = float(np.mean(close_prices[-20:]))
             
             # Calculate trends
             short_trend = (ma5 - ma10) / ma10 * 100 if ma10 != 0 else 0
@@ -85,24 +89,30 @@ def simple_price_prediction(data):
             if short_trend > 0 and long_trend > 0:
                 confidence = 92
                 signal = "STRONG BUY"
+                recommendation = "📈 Consider buying on dips"
             elif short_trend < 0 and long_trend < 0:
                 confidence = 88
                 signal = "STRONG SELL"
+                recommendation = "📉 Consider selling on rallies"
             elif short_trend > 0:
                 confidence = 78
                 signal = "WEAK BUY"
+                recommendation = "📊 Cautious buying opportunity"
             elif short_trend < 0:
                 confidence = 75
                 signal = "WEAK SELL"
+                recommendation = "⚡ Consider reducing position"
             else:
                 confidence = 70
                 signal = "NEUTRAL"
+                recommendation = "➡️ Wait for clearer trend"
             
-            return predicted_price, confidence, 100 - confidence, signal
+            return predicted_price, confidence, 100 - confidence, signal, recommendation, latest_price
         else:
-            return latest_price * 1.01, 85.0, 15.0, "INSUFFICIENT DATA"
+            return latest_price * 1.01, 85.0, 15.0, "INSUFFICIENT DATA", "Need more data for analysis", latest_price
     except Exception as e:
-        return None, None, None, None
+        st.error(f"Prediction error: {str(e)}")
+        return None, None, None, None, None, None
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -151,7 +161,7 @@ def add_new_alert(user, symbol, cond, target, chat_id):
         "user": user,
         "symbol": symbol,
         "condition": cond,
-        "target": target,
+        "target": float(target),
         "chat_id": chat_id,
         "status": "active",
         "set_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -273,15 +283,6 @@ if st.session_state.page == "home":
             AI-Powered <span style="background: linear-gradient(135deg, #00bfa6, #00ff88); -webkit-background-clip: text; background-clip: text; color: transparent;">Trading</span> Intelligence
         </div>
         <div style="font-size: 18px; color: #8899aa;">Neural Market Analysis | Deep Learning Predictions | Real-Time Insights</div>
-        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 191, 166, 0.08); border-radius: 30px; padding: 6px 16px; margin: 20px 0;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #00ff88; animation: blink 1s infinite;"></span>
-            <span>AI Neural Engine Active</span>
-        </div>
-        <div style="display: flex; justify-content: center; gap: 50px; margin: 30px 0;">
-            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 700;">98.7%</div><div style="font-size: 11px; color: #6688aa;">ACCURACY</div></div>
-            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 700;">AI</div><div style="font-size: 11px; color: #6688aa;">MODEL</div></div>
-            <div style="text-align: center;"><div style="font-size: 28px; font-weight: 700;">24/7</div><div style="font-size: 11px; color: #6688aa;">LIVE</div></div>
-        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -292,15 +293,11 @@ if st.session_state.page == "home":
     if nifty_price and sensex_price:
         col1, col2 = st.columns(2)
         with col1:
-            nifty_color = "#00ff88" if nifty_change >= 0 else "#ff5555"
-            nifty_arrow = "▲" if nifty_change >= 0 else "▼"
-            st.metric("NIFTY 50", f"{nifty_price:,.0f}", f"{nifty_arrow} {abs(nifty_change):.2f}%")
+            st.metric("NIFTY 50", f"{nifty_price:,.0f}", f"{'▲' if nifty_change >= 0 else '▼'} {abs(nifty_change):.2f}%")
         with col2:
-            sensex_color = "#00ff88" if sensex_change >= 0 else "#ff5555"
-            sensex_arrow = "▲" if sensex_change >= 0 else "▼"
-            st.metric("SENSEX", f"{sensex_price:,.0f}", f"{sensex_arrow} {abs(sensex_change):.2f}%")
+            st.metric("SENSEX", f"{sensex_price:,.0f}", f"{'▲' if sensex_change >= 0 else '▼'} {abs(sensex_change):.2f}%")
     
-    # Top Stories - FIXED with fallback
+    # Top Stories
     st.subheader("📰 Top Stories")
     
     def get_top_news():
@@ -310,112 +307,70 @@ if st.session_state.page == "home":
         try:
             response = requests.get(url, timeout=10)
             if response.status_code == 200:
-                news_list = response.json()
-                return news_list[:5]
-            else:
-                return None
-        except Exception as e:
-            st.warning(f"News API error: {str(e)}")
+                return response.json()[:5]
+            return None
+        except:
             return None
     
     news_items = get_top_news()
     if news_items:
         for news in news_items:
-            published_time = datetime.datetime.fromtimestamp(news['datetime']).strftime('%Y-%m-%d %H:%M')
             st.markdown(f"""
             <div style="background: rgba(0, 30, 20, 0.4); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 2px solid #00bfa6;">
                 <a href="{news['url']}" target="_blank" style="text-decoration:none; color:#00bfa6; font-size:16px; font-weight:bold;">{news['headline']}</a>
-                <p style="color:#8899aa; font-size:13px; margin:5px 0 0 0;">Source: {news['source']} | Published: {published_time}</p>
+                <p style="color:#8899aa; font-size:13px;">{news['source']} | {datetime.datetime.fromtimestamp(news['datetime']).strftime('%Y-%m-%d %H:%M')}</p>
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.info("📰 News feed: Add your FINNHUB_API_KEY in Secrets to see live news. Showing sample news for now.")
-        # Sample news as fallback
-        st.markdown("""
-        <div style="background: rgba(0, 30, 20, 0.4); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 2px solid #00bfa6;">
-            <a href="#" style="text-decoration:none; color:#00bfa6; font-size:16px; font-weight:bold;">📈 Markets rally on positive economic data</a>
-            <p style="color:#8899aa; font-size:13px; margin:5px 0 0 0;">Source: Market News | Published: Today</p>
-        </div>
-        <div style="background: rgba(0, 30, 20, 0.4); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 2px solid #00bfa6;">
-            <a href="#" style="text-decoration:none; color:#00bfa6; font-size:16px; font-weight:bold;">🤖 AI revolution in trading continues</a>
-            <p style="color:#8899aa; font-size:13px; margin:5px 0 0 0;">Source: Tech News | Published: Yesterday</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.info("📰 Add FINNHUB_API_KEY to secrets for live news")
     
     # Candlestick charts
     st.title("📊 Live Candlestick Chart")
     
-    symbol = st.text_input("Enter Stock Symbol (e.g. RELIANCE.NS or AAPL):", st.session_state.selected_stock).upper().strip()
-    
-    period = st.selectbox("Select Period:", ["1mo", "3mo", "6mo", "1y", "2y"], index=1)
-    
-    refresh_sec = st.slider("Auto-refresh every (seconds):", 30, 300, 60)
-    st_autorefresh(interval=refresh_sec * 1000, limit=None, key="auto_refresh")
+    symbol = st.text_input("Enter Stock Symbol:", st.session_state.selected_stock).upper().strip()
+    period = st.selectbox("Period:", ["1mo", "3mo", "6mo", "1y"], index=1)
     
     try:
         df = yf.download(symbol, period=period, interval="1d", progress=False)
         
-        if df.empty:
-            st.warning(f"⚠️ No data available for {symbol}")
-        else:
-            df = df[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
-            df.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+        if not df.empty:
+            df = df[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
             
-            for col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-            df = df.dropna()
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={'height_ratios': [3, 1]})
             
-            if len(df) < 10:
-                st.warning("⚠️ Not enough data points")
-            else:
-                st.success(f"✅ Showing {symbol} | Period: {period}")
-                st.caption(f"Last updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Data points: {len(df)}")
+            for i in range(len(df)):
+                open_p = df['Open'].iloc[i]
+                close_p = df['Close'].iloc[i]
+                high = df['High'].iloc[i]
+                low = df['Low'].iloc[i]
+                color = '#00ff88' if close_p >= open_p else '#ff4444'
                 
-                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={'height_ratios': [3, 1]})
-                
-                width = 0.6
-                for i in range(len(df)):
-                    open_p = df['Open'].iloc[i]
-                    close_p = df['Close'].iloc[i]
-                    high = df['High'].iloc[i]
-                    low = df['Low'].iloc[i]
-                    date = df.index[i]
-                    
-                    color = '#00ff88' if close_p >= open_p else '#ff4444'
-                    
-                    ax1.bar(date, close_p - open_p, bottom=min(open_p, close_p), 
-                           width=width, color=color, alpha=0.8, zorder=2)
-                    ax1.plot([date, date], [low, high], color=color, linewidth=1, zorder=1)
-                
-                ax1.set_title(f'{symbol} - Candlestick Chart', fontsize=14, fontweight='bold', color='white')
-                ax1.set_ylabel('Price (₹)', color='white')
-                ax1.tick_params(colors='white')
-                ax1.grid(True, alpha=0.2)
-                ax1.set_facecolor('#0a0e17')
-                
-                colors = ['#00ff88' if df['Close'].iloc[i] >= df['Open'].iloc[i] else '#ff4444' for i in range(len(df))]
-                ax2.bar(df.index, df['Volume'], color=colors, alpha=0.5)
-                ax2.set_ylabel('Volume', color='white')
-                ax2.tick_params(colors='white')
-                ax2.set_facecolor('#0a0e17')
-                ax2.grid(True, alpha=0.2)
-                
-                plt.xticks(rotation=45, ha='right')
-                fig.patch.set_facecolor('#0a0e17')
-                plt.tight_layout()
-                st.pyplot(fig)
-                plt.close()
-                
+                ax1.bar(df.index[i], close_p - open_p, bottom=min(open_p, close_p), width=0.6, color=color, alpha=0.8)
+                ax1.plot([df.index[i], df.index[i]], [low, high], color=color, linewidth=1)
+            
+            ax1.set_facecolor('#0a0e17')
+            ax1.tick_params(colors='white')
+            ax1.set_title(f'{symbol} - {period}', color='white')
+            
+            colors = ['#00ff88' if df['Close'].iloc[i] >= df['Open'].iloc[i] else '#ff4444' for i in range(len(df))]
+            ax2.bar(df.index, df['Volume'], color=colors, alpha=0.5)
+            ax2.set_facecolor('#0a0e17')
+            ax2.tick_params(colors='white')
+            
+            fig.patch.set_facecolor('#0a0e17')
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close()
     except Exception as e:
-        st.error(f"Error: {str(e)}")
-        st.info("💡 Tip: Try using symbols like: RELIANCE.NS, TCS.NS, INFY.NS, AAPL, MSFT, GOOGL")
+        st.error(f"Error: {e}")
     
-    # Stock Analysis Section
+    # Stock Analysis
     st.subheader("📈 Stock Analysis")
     stocks = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "AAPL", "MSFT", "GOOGL"]
-    selected_stock = st.selectbox("🔎 Select Stock Symbol", stocks, key="stock_select")
+    selected_stock = st.selectbox("Select Stock:", stocks, key="stock_select")
     
-    if st.button("📊 Show Analysis", key="show_analysis"):
+    if st.button("📊 Analyze", key="analyze"):
         st.session_state.selected_stock = selected_stock
         st.rerun()
     
@@ -423,197 +378,145 @@ if st.session_state.page == "home":
         stock_symbol = st.session_state.selected_stock
         st.subheader(f"📈 {stock_symbol} Analysis")
         
-        # Download data for analysis
         data = yf.download(stock_symbol, period="1y", interval="1d", progress=False)
         
-        if not data.empty and len(data) > 0:
-            data = data[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
-            for col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors='coerce')
-            data = data.dropna()
+        if not data.empty:
+            data = data[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
             
-            if len(data) > 0:
-                st.subheader("📊 Summary Statistics")
-                st.dataframe(data.describe())
+            # Display current price
+            current_price = float(data['Close'].iloc[-1])
+            st.metric("Current Price", f"₹{current_price:,.2f}")
+            
+            # Moving Averages Chart
+            data["MA10"] = data["Close"].rolling(10).mean()
+            data["MA20"] = data["Close"].rolling(20).mean()
+            data["MA50"] = data["Close"].rolling(50).mean()
+            
+            fig, ax = plt.subplots(figsize=(12, 5))
+            ax.plot(data.index, data["Close"], label="Close", color="#00bfa6", linewidth=1.5)
+            ax.plot(data.index, data["MA10"], label="MA10", color="#ff6600", linewidth=1.5)
+            ax.plot(data.index, data["MA20"], label="MA20", color="#ffcc00", linewidth=1.5)
+            ax.plot(data.index, data["MA50"], label="MA50", color="#ff00ff", linewidth=1.5)
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Price (₹)")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            ax.set_facecolor('#0a0e17')
+            fig.patch.set_facecolor('#0a0e17')
+            ax.tick_params(colors='white')
+            st.pyplot(fig)
+            plt.close()
+            
+            # ============ AI PRICE PREDICTION (FIXED) ============
+            st.markdown("---")
+            st.subheader("🤖 AI Price Prediction")
+            
+            with st.spinner("Analyzing market trends..."):
+                result = simple_price_prediction(data)
+            
+            if result[0] is not None:
+                predicted_price, confidence, mape, signal, recommendation, latest_price = result
                 
-                st.subheader("📈 Closing Price Chart")
-                fig, ax = plt.subplots(figsize=(12, 4))
-                ax.plot(data.index, data["Close"], color="#00bfa6", linewidth=2, label="Closing Price")
-                ax.set_xlabel("Date")
-                ax.set_ylabel("Price (₹)")
-                ax.legend()
-                ax.grid(True, alpha=0.3)
-                ax.set_facecolor('#0a0e17')
-                fig.patch.set_facecolor('#0a0e17')
-                ax.tick_params(colors='white')
-                ax.xaxis.label.set_color('white')
-                ax.yaxis.label.set_color('white')
-                st.pyplot(fig)
-                plt.close()
+                # Display predictions in columns
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Current Price", f"₹{latest_price:,.2f}")
+                with col2:
+                    change_percent = ((predicted_price - latest_price) / latest_price) * 100
+                    st.metric("Predicted Price", f"₹{predicted_price:,.2f}", 
+                             delta=f"{'+' if change_percent >= 0 else ''}{change_percent:.2f}%")
+                with col3:
+                    st.metric("AI Confidence", f"{confidence:.1f}%")
                 
-                st.subheader("📉 Moving Averages (10, 20, 50 days)")
-                data["MA10"] = data["Close"].rolling(10).mean()
-                data["MA20"] = data["Close"].rolling(20).mean()
-                data["MA50"] = data["Close"].rolling(50).mean()
+                # Trading Signal
+                if "BUY" in signal:
+                    st.success(f"📈 **{signal}** - {recommendation}")
+                elif "SELL" in signal:
+                    st.warning(f"📉 **{signal}** - {recommendation}")
+                else:
+                    st.info(f"⚡ **{signal}** - {recommendation}")
                 
-                fig, ax = plt.subplots(figsize=(12, 4))
-                ax.plot(data.index, data["Close"], label="Close", color="#00bfa6", linewidth=1.5)
-                ax.plot(data.index, data["MA10"], label="MA10", color="#ff6600", linewidth=1.5)
-                ax.plot(data.index, data["MA20"], label="MA20", color="#ffcc00", linewidth=1.5)
-                ax.plot(data.index, data["MA50"], label="MA50", color="#ff00ff", linewidth=1.5)
-                ax.set_xlabel("Date")
-                ax.set_ylabel("Price (₹)")
-                ax.legend()
-                ax.grid(True, alpha=0.3)
-                ax.set_facecolor('#0a0e17')
-                fig.patch.set_facecolor('#0a0e17')
-                ax.tick_params(colors='white')
-                ax.xaxis.label.set_color('white')
-                ax.yaxis.label.set_color('white')
-                st.pyplot(fig)
-                plt.close()
-                
-                # ============ AI PRICE PREDICTION SECTION ============
-                st.subheader("🤖 AI Price Prediction")
-                
-                try:
-                    latest_price = data["Close"].iloc[-1]
-                    if hasattr(latest_price, 'values'):
-                        latest_price = float(latest_price.values[0])
-                    else:
-                        latest_price = float(latest_price)
-                    
-                    with st.spinner("Analyzing market trends..."):
-                        next_price, confidence, mape, signal = simple_price_prediction(data)
-                    
-                    if next_price:
-                        # Display prediction results
-                        col_pred1, col_pred2, col_pred3 = st.columns(3)
-                        
-                        with col_pred1:
-                            st.metric("Current Price", f"₹{latest_price:,.2f}")
-                        
-                        with col_pred2:
-                            change_percent = ((next_price - latest_price) / latest_price) * 100
-                            st.metric("Predicted Price", f"₹{next_price:,.2f}", 
-                                     delta=f"{'+' if change_percent >= 0 else ''}{change_percent:.2f}%")
-                        
-                        with col_pred3:
-                            st.metric("Confidence", f"{confidence:.1f}%")
-                        
-                        st.markdown("---")
-                        
-                        # Trading Signal
-                        if "BUY" in signal:
-                            st.success(f"📈 **Trading Signal: {signal}**")
-                        elif "SELL" in signal:
-                            st.warning(f"📉 **Trading Signal: {signal}**")
-                        else:
-                            st.info(f"⚡ **Trading Signal: {signal}**")
-                        
-                        # Analysis explanation
-                        st.markdown("""
-                        <div style="background: rgba(0, 30, 20, 0.3); padding: 15px; border-radius: 10px; margin: 15px 0;">
-                            <strong>📊 Analysis Method:</strong> Moving Average Trend Analysis<br>
-                            <small>This AI model analyzes 5-day, 10-day, and 20-day moving averages to predict price movement.</small>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        st.caption("⚠️ Disclaimer: Predictions are for informational purposes only. Not financial advice.")
-                    else:
-                        st.warning("⚠️ Insufficient data for prediction. Need at least 30 days of historical data.")
-                        
-                except Exception as price_error:
-                    st.error(f"Error in price analysis: {str(price_error)}")
-                    st.info("💡 Tip: Make sure you have sufficient historical data")
-                
-                # Alert System (only for logged in users)
-                if st.session_state.logged_in:
-                    st.markdown("---")
-                    st.subheader("🔔 Price Alert Manager")
-                    
-                    with st.expander("➕ Set New Alert"):
-                        alert_cond = st.selectbox("Condition", ["Price >=", "Price <="])
-                        alert_val = st.number_input("Target Price (₹)", value=float(latest_price))
-                        if st.button("Create Alert", key="create_alert"):
-                            add_new_alert(st.session_state.username, stock_symbol, ">" if ">=" in alert_cond else "<", alert_val, "demo")
-                            st.success("✅ Alert created successfully!")
-                    
-                    # Display active alerts
-                    all_alerts = load_json_data(ALERTS_FILE)
-                    user_alerts = {k: v for k, v in all_alerts.items() if v.get('user') == st.session_state.username}
-                    if user_alerts:
-                        st.write("**Your Active Alerts:**")
-                        for aid, ainfo in user_alerts.items():
-                            col1, col2 = st.columns([3, 1])
-                            col1.write(f"🔔 {ainfo['symbol']} {ainfo['condition']} ₹{ainfo['target']}")
-                            if col2.button("Delete", key=f"del_{aid}"):
-                                del all_alerts[aid]
-                                save_json_data(ALERTS_FILE, all_alerts)
-                                st.rerun()
+                st.caption("⚠️ Disclaimer: For informational purposes only. Not financial advice.")
             else:
-                st.warning("No valid data available for analysis")
-        else:
-            st.warning(f"No data found for {stock_symbol}")
+                st.warning("⚠️ Insufficient data for prediction. Need at least 30 days of data.")
+            
+            # Alert System for logged-in users
+            if st.session_state.logged_in:
+                st.markdown("---")
+                st.subheader("🔔 Price Alert")
+                
+                with st.expander("Set New Alert"):
+                    alert_cond = st.selectbox("Condition", ["Price >=", "Price <="])
+                    alert_val = st.number_input("Target Price (₹)", value=float(current_price))
+                    if st.button("Create Alert"):
+                        add_new_alert(st.session_state.username, stock_symbol, ">" if ">=" in alert_cond else "<", alert_val, "demo")
+                        st.success("Alert created!")
+                
+                # Show active alerts
+                all_alerts = load_json_data(ALERTS_FILE)
+                user_alerts = {k: v for k, v in all_alerts.items() if v.get('user') == st.session_state.username}
+                if user_alerts:
+                    st.write("**Your Alerts:**")
+                    for aid, alert in user_alerts.items():
+                        col1, col2 = st.columns([3, 1])
+                        col1.write(f"🔔 {alert['symbol']} {alert['condition']} ₹{alert['target']:,.2f}")
+                        if col2.button("Delete", key=f"del_{aid}"):
+                            del all_alerts[aid]
+                            save_json_data(ALERTS_FILE, all_alerts)
+                            st.rerun()
 
 # INDIAN MARKET PAGE
 elif st.session_state.page == "indian":
     st.title("🇮🇳 Indian Markets")
-    st.info("Top Indian stocks: TCS, Reliance, Infosys, HDFC Bank, ICICI Bank")
-    
-    indian_stocks = ["TCS.NS", "RELIANCE.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "WIPRO.NS"]
-    selected_indian = st.selectbox("Select Indian Stock", indian_stocks, key="indian_select")
-    
-    if st.button("View Analysis", key="view_indian"):
-        st.session_state.selected_stock = selected_indian
+    indian_stocks = ["TCS.NS", "RELIANCE.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS"]
+    selected = st.selectbox("Select Stock", indian_stocks)
+    if st.button("View"):
+        st.session_state.selected_stock = selected
         set_page("home")
         st.rerun()
 
 # GLOBAL MARKET PAGE
 elif st.session_state.page == "global":
     st.title("🌍 Global Markets")
-    st.info("Top global stocks: Apple, Microsoft, Tesla, Amazon, Google")
-    
     global_stocks = ["AAPL", "MSFT", "TSLA", "AMZN", "GOOGL", "META", "NVDA"]
-    selected_global = st.selectbox("Select Global Stock", global_stocks, key="global_select")
-    
-    if st.button("View Analysis", key="view_global"):
-        st.session_state.selected_stock = selected_global
+    selected = st.selectbox("Select Stock", global_stocks)
+    if st.button("View"):
+        st.session_state.selected_stock = selected
         set_page("home")
         st.rerun()
 
 # SIGN UP PAGE
 elif st.session_state.page == "signup":
-    st.markdown("<h1 style='color:#00bfa6;text-align:center;'>🚀 Create New Account</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color:#00bfa6;text-align:center;'>🚀 Create Account</h1>", unsafe_allow_html=True)
     
-    with st.form("signup_form"):
-        first_name = st.text_input("First Name *")
-        last_name = st.text_input("Last Name *")
-        email = st.text_input("Email ID *")
-        username = st.text_input("Username *")
-        password = st.text_input("Password *", type="password")
-        confirm_password = st.text_input("Confirm Password *", type="password")
+    with st.form("signup"):
+        first_name = st.text_input("First Name")
+        last_name = st.text_input("Last Name")
+        email = st.text_input("Email")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        confirm = st.text_input("Confirm Password", type="password")
         
-        st.markdown("### 🔐 Captcha Verification")
+        st.markdown("### Captcha")
         st.code(st.session_state.current_captcha)
-        entered_captcha = st.text_input("Enter Captcha *")
-        agree = st.checkbox("I agree to Terms & Conditions")
+        captcha_input = st.text_input("Enter Captcha")
+        agree = st.checkbox("I agree to Terms")
         
         if st.form_submit_button("Register"):
             if not all([first_name, last_name, email, username, password]):
-                st.error("Please fill all fields")
-            elif password != confirm_password:
-                st.error("Passwords do not match")
-            elif entered_captcha != st.session_state.current_captcha:
+                st.error("Fill all fields")
+            elif password != confirm:
+                st.error("Passwords don't match")
+            elif captcha_input != st.session_state.current_captcha:
                 st.error("Invalid captcha")
                 st.session_state.current_captcha = generate_captcha()
                 st.rerun()
             elif not agree:
-                st.error("Please agree to terms")
+                st.error("Accept terms")
             else:
                 users = load_users()
                 if username in users:
-                    st.error("Username already exists")
+                    st.error("Username exists")
                 else:
                     users[username] = {
                         "first_name": first_name, "last_name": last_name, "email": email,
@@ -625,7 +528,7 @@ elif st.session_state.page == "signup":
                     set_page("signin")
                     st.rerun()
     
-    if st.button("Refresh Captcha", key="refresh_captcha"):
+    if st.button("Refresh Captcha"):
         st.session_state.current_captcha = generate_captcha()
         st.rerun()
 
@@ -633,18 +536,18 @@ elif st.session_state.page == "signup":
 elif st.session_state.page == "signin":
     st.markdown("<h1 style='color:#00bfa6;text-align:center;'>🔐 Sign In</h1>", unsafe_allow_html=True)
     
-    with st.form("login_form"):
+    with st.form("login"):
         username = st.text_input("Username or Email")
         password = st.text_input("Password", type="password")
         
         if st.form_submit_button("Login"):
             users = load_users()
-            for uid, uinfo in users.items():
-                if uid == username or uinfo.get('email') == username:
-                    if uinfo.get('password') == hash_password(password):
+            for uid, info in users.items():
+                if uid == username or info.get('email') == username:
+                    if info.get('password') == hash_password(password):
                         st.session_state.logged_in = True
                         st.session_state.username = uid
-                        st.session_state.user_data = uinfo
+                        st.session_state.user_data = info
                         st.success("Login successful!")
                         set_page("home")
                         st.rerun()
@@ -655,47 +558,16 @@ elif st.session_state.page == "signin":
 # PROFILE PAGE
 elif st.session_state.page == "profile":
     if not st.session_state.logged_in:
-        st.warning("Please login to view profile")
-        if st.button("Go to Sign In", key="goto_signin"):
+        st.warning("Please login first")
+        if st.button("Go to Sign In"):
             set_page("signin")
             st.rerun()
     else:
-        st.markdown("## 👤 My Profile")
+        st.markdown(f"## 👤 {st.session_state.user_data.get('first_name', '')} {st.session_state.user_data.get('last_name', '')}")
+        st.markdown(f"**Username:** @{st.session_state.username}")
+        st.markdown(f"**Email:** {st.session_state.user_data.get('email', '')}")
+        st.markdown(f"**Member since:** {st.session_state.user_data.get('created_at', 'N/A')}")
         
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            profile_img = get_profile_image_base64(st.session_state.username)
-            if profile_img:
-                st.image(f"data:image/png;base64,{profile_img}", width=150)
-            else:
-                st.markdown(f"""
-                <div style="width: 150px; height: 150px; border-radius: 75px; background: linear-gradient(135deg, #00bfa6, #008c7a); display: flex; align-items: center; justify-content: center;">
-                    <span style="font-size: 64px; color: white;">{st.session_state.username[0].upper()}</span>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with st.expander("📸 Upload Photo"):
-                uploaded = st.file_uploader("Choose image", type=["png", "jpg", "jpeg"])
-                if uploaded and st.button("Upload"):
-                    save_profile_image(st.session_state.username, uploaded)
-                    st.rerun()
-        
-        with col2:
-            st.markdown(f"**Name:** {st.session_state.user_data.get('first_name', '')} {st.session_state.user_data.get('last_name', '')}")
-            st.markdown(f"**Username:** @{st.session_state.username}")
-            st.markdown(f"**Email:** {st.session_state.user_data.get('email', '')}")
-            st.markdown(f"**Member Since:** {st.session_state.user_data.get('created_at', 'N/A')}")
-        
-        if st.button("🚪 Logout", key="logout_btn"):
+        if st.button("🚪 Logout"):
             logout()
             st.rerun()
-
-# CSS animation for blinking dot
-st.markdown("""
-<style>
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-</style>
-""", unsafe_allow_html=True)
