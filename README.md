@@ -105,8 +105,6 @@ https://huggingface.co/spaces/Darshee245/TradeVistaX-Live
 | **python-dotenv** | Environment variable management |
 | **streamlit-autorefresh** | Auto-refresh functionality |
 
-> **Note:** This app uses a lightweight prediction model (Moving Average Trend Analysis) instead of TensorFlow LSTM for faster deployment and better cloud compatibility.
-
 ---
 
 # 📂 Project Structure
